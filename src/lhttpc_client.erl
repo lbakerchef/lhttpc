@@ -238,6 +238,7 @@ send_request(#client_state{socket = undefined} = State) ->
             ConnectOptions0
     end,
     SocketOptions = [binary, {packet, http}, {active, false} | ConnectOptions],
+io:fwrite("~n~nCONNECTING - host:~w port:~w options:~w timeout:~w ssl:~w~n~n", [Host, Port, SocketOptions, Timeout, Ssl]),
     try lhttpc_sock:connect(Host, Port, SocketOptions, Timeout, Ssl) of
         {ok, Socket} ->
             send_request(State#client_state{socket = Socket});
