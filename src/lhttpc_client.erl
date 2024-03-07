@@ -162,7 +162,8 @@ execute(From, Host, Port, Ssl, Path, Method, Hdrs0, Body, Options) ->
     EffectiveTcpOptions = fix_inet_options(EffectiveTcpOptions0),
     EffectiveOptions = case Ssl of
         true ->
-            DefSslOptions = application:get_env(lhttpc, ssl_options, []),
+            DefSslOptions0 = application:get_env(lhttpc, ssl_options, []),
+            DefSslOptions = add_cacerts(DefSslOptions0),
             UserSslOptions = proplists:get_value(ssl_options, Options, []),
             EffectiveSslOpts = lists:ukeymerge(1,
                 lists:ukeysort(1, UserSslOptions),
@@ -972,3 +973,14 @@ fix_inet_options(Options) ->
                 end;
             (Option) -> {true, Option}
         end, Options).
+
+-ifdef(cacerts).
+add_cacerts(ConnOpts) ->
+    case proplists:is_defined(cacerts, ConnOpts) of
+        true -> ConnOpts;
+        false ->
+            [{cacerts, public_key:cacerts_get()} | ConnOpts]
+    end.
+-else.
+add_cacerts(ConnOpts) -> ConnOpts.
+-endif.
