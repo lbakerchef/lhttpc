@@ -162,13 +162,13 @@ execute(From, Host, Port, Ssl, Path, Method, Hdrs0, Body, Options) ->
     EffectiveTcpOptions = fix_inet_options(EffectiveTcpOptions0),
     EffectiveOptions = case Ssl of
         true ->
-            DefSslOptions0 = application:get_env(lhttpc, ssl_options, []),
-            DefSslOptions = add_cacerts(DefSslOptions0),
+            DefSslOptions = application:get_env(lhttpc, ssl_options, []),
             UserSslOptions = proplists:get_value(ssl_options, Options, []),
-            EffectiveSslOpts = lists:ukeymerge(1,
+            EffectiveSslOpts0 = lists:ukeymerge(1,
                 lists:ukeysort(1, UserSslOptions),
                 lists:ukeysort(1, DefSslOptions)
             ),
+            EffectiveSslOpts = add_cacerts(EffectiveSslOpts0),
             EffectiveTcpOptions ++ EffectiveSslOpts;
         false ->
             EffectiveTcpOptions
@@ -976,10 +976,20 @@ fix_inet_options(Options) ->
 
 -ifdef(cacerts).
 add_cacerts(ConnOpts) ->
-    case proplists:is_defined(cacerts, ConnOpts) of
-        true -> ConnOpts;
-        false ->
-            [{cacerts, public_key:cacerts_get()} | ConnOpts]
+    case proplists:get_value(cacerts, ConnOpts) of
+        undefined ->
+            case proplists:get_value(verify, ConnOpts) of
+                verify_none ->
+                    %% don't retrieve system certificates if verify option
+                    %% is explicitly set to verify_none.
+                    ConnOpts;
+                _ ->
+                    %% Calling the `public_key:cacerts_get()` can be avoided
+                    %% if either {cacerts, ...} or {verify, verify_none} are
+                    %% configured
+                    [{cacerts, public_key:cacerts_get()} | ConnOpts]
+            end;
+        _ -> ConnOpts
     end.
 -else.
 add_cacerts(ConnOpts) -> ConnOpts.
