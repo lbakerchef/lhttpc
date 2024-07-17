@@ -1,9 +1,8 @@
-.PHONY: all release compile test clean rel doc build-plt dialyzer
+.PHONY: all release compile test clean doc dialyzer
 
 PROJECT = lhttpc
 
-REBAR := ./rebar
-DIALYZER = dialyzer
+REBAR := ./rebar3
 
 APPS = kernel stdlib sasl inets ssl public_key crypto compiler
 
@@ -13,7 +12,7 @@ compile:
 	$(REBAR) compile
 
 doc:
-	$(REBAR) doc
+	$(REBAR) edoc
 
 test:	compile
 	$(REBAR) eunit
@@ -24,11 +23,5 @@ release: all dialyze test
 clean:
 	$(REBAR) clean
 
-build-plt: compile
-	@$(DIALYZER) --build_plt --output_plt .$(PROJECT).plt \
-		--apps $(APPS)
-
 dialyzer:
-	@$(DIALYZER) --fullpath  --src ./src \
-		--plt .$(PROJECT).plt --no_native \
-		-Werror_handling  #-Wrace_conditions
+	@$(REBAR) dialyzer
