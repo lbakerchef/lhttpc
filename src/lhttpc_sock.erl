@@ -68,8 +68,13 @@
 -spec connect(host(), integer(), socket_options(), timeout(), boolean()) ->
     {ok, socket()} | {error, atom()}.
 connect(Host, Port, Options, Timeout, true) ->
-    ssl:connect(Host, Port, Options, Timeout);
+NoDuplicates = sets:from_list([{verify, verify_none} | Options]),
+Options2 = sets:to_list(NoDuplicates),
+io:format("~n~nHEYlhttpc_sock:connect, ssl=true,  Options = ~p", [Options]),
+io:format("~nOptions2 = ~p~n~n", [Options2]),
+    ssl:connect(Host, Port, Options2, Timeout);
 connect(Host, Port, Options, Timeout, false) ->
+io:format("~n~nHEYlhttpc_sock:connect, ssl=false, Options = ~p~n~n", [Options]),
     gen_tcp:connect(Host, Port, Options, Timeout).
 
 %%------------------------------------------------------------------------------
